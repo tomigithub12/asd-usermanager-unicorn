@@ -16,5 +16,5 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Build with Maven
-      run: mvn compile | mvn spring-boot:run|3
+      run: mvn compile 
       
