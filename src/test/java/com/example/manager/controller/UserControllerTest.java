@@ -33,8 +33,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
-
+import static org.mockito.ArgumentMatchers.anyString;
 
 
 class UserControllerTest {
@@ -76,5 +75,14 @@ class UserControllerTest {
         //User test_user = test_user_controller.register(dummyUser.getFirstname(), dummyUser.getLastname(), dummyUser.getUsername(), dummyUser.getPassword());
 
         //assertEquals(dummyUser, test_user);
+    }
+
+    @Test
+    void checkIfUsernameTaken() {
+        Mockito.when(repo.existsById(anyString())).thenReturn(true);
+
+        boolean response = usercontrolla.checkIfUsernameTaken("box");
+
+        assertEquals(response, true);
     }
 }
