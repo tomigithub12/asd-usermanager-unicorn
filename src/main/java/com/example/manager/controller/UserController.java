@@ -3,9 +3,20 @@ package com.example.manager.controller;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+
+import com.example.manager.configuration.MyAppConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
 
 import com.example.manager.repository.UserRepository;
@@ -14,7 +25,14 @@ import com.example.manager.domain.User;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.example.manager.repository.UserRepository;
+
 @Service
+//@Controller
+//@Configuration
+//@ComponentScan(basePackages = "com.example.manager")
+//@ComponentScan(basePackageClasses = MyAppConfiguration.class)
+//@EnableMongoRepositories
 public class UserController {
 
     public static final int maxFailedAttempts = 3;
@@ -23,22 +41,47 @@ public class UserController {
     private static final long lockTimeDuration = 60 * 1000;
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    public PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
+
+    //AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
     @Autowired
     private UserRepository repo;
 
+
+
+
+    //private UserRepository userRepository() { this.userRepository(); };
+
+
+
+
+    //@Autowired
+    //private PasswordEncoder passwordEncoder;
+
     final private PasswordEncoder passwordEncoder = passwordEncoder();
+
+    //AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+
+    //final private PasswordEncoder passwordEncoder = context.getBean(PasswordEncoder.class);
 
     public UserController() {
         super();
+
+        //userController = userController;
     }
 
 
-    public User register(User user) {
+    public User register(String firstname, String lastname, String username, String password) {
+        String bCryptEncodedPassword = passwordEncoder.encode(password);
+
+        int failedAttempt = 0;
+        boolean accountNonLocked = true;
+        Date lockTime = null;
+
+        User user = new User(firstname, lastname, username, bCryptEncodedPassword, failedAttempt, accountNonLocked, lockTime);
         return repo.save(user);
+        //return userRepository().save(user);
     }
 
     public boolean checkIfUsernameTaken(String username) {
@@ -47,26 +90,29 @@ public class UserController {
 
 
     public boolean login(String username, String password) {
-        User temp = null;
-        try {
-            temp = repo.findById(username).get();
-        } catch (Exception e) {
+        //User tempUser = null;
+        //try {
+        //    tempUser = repo.findById(username).get();
+        //} catch (Exception e) {
 
-        }
-        if (temp != null) {
-            if (passwordEncoder.matches(password, temp.getPassword()) && temp.getAccountNonLocked()) {
+        //}
+
+        User tempUser = loadTempUser(username);
+
+        if (tempUser != null) {
+            if (passwordEncoder.matches(password, tempUser.getPassword()) && tempUser.getAccountNonLocked()) {
                 resetFailedAttempts(username);
                 return true;
             } else {
                 unlockAfterTimeExpired(username);
-                temp = repo.findById(username).get();
-                if (temp.getAccountNonLocked() && temp.getFailedAttempt() < maxFailedAttempts) {
+                //tempUser = repo.findById(username).get();
+                if (tempUser.getAccountNonLocked() && tempUser.getFailedAttempt() < maxFailedAttempts) {
                     increaseFailedAttempts(username);
-                    temp = repo.findById(username).get();
-                    System.out.println("Failed attempt " + temp.getFailedAttempt() + "/4.");
+                    //tempUser = repo.findById(username).get();
+                    System.out.println("Failed attempt " + tempUser.getFailedAttempt() + "/4.");
                 } else {
-                    temp = repo.findById(username).get();
-                    if (temp.getFailedAttempt() == maxFailedAttempts) {
+                    //tempUser = repo.findById(username).get();
+                    if (tempUser.getFailedAttempt() == maxFailedAttempts) {
                         lock(username);
                         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
                         LocalDateTime  loginFailed = LocalDateTime.now().plusSeconds(60);
@@ -82,49 +128,63 @@ public class UserController {
         return false;
     }
 
-    public User changePassword(String username, String newPassword) {
-        User temp = repo.findById(username).get();
-        temp.setPassword(passwordEncoder.encode(newPassword));
-        repo.save(temp);
-        return repo.save(temp);
+    public User loadTempUser (String username) {
+        User tempUser = null;
+        try {
+            tempUser = repo.findById(username).orElseThrow();
+
+        } catch (Exception e) {
+            System.out.println("Username not found!");
+            return null;
+        }
+        return tempUser;
     }
 
-    public void logout() {
+    public User changePassword(String username, String newPassword) {
+        User tempUser = repo.findById(username).orElseThrow();
+        tempUser.setPassword(passwordEncoder.encode(newPassword));
+        //repo.save(tempUser);
+        return repo.save(tempUser);
+    }
+
+    public void logout(String username, String password) {
+        username = null;
+        password = null;
         System.out.println("You are logged out!\n");
     }
 
     public void increaseFailedAttempts(String username) {
-        User temp = repo.findById(username).get();
-        int failedAttempttempt = temp.getFailedAttempt() + 1;
-        temp.setFailedAttempt(failedAttempttempt);
-        repo.save(temp);
+        User tempUser = repo.findById(username).orElseThrow();
+        int failedAttempttempt = tempUser.getFailedAttempt() + 1;
+        tempUser.setFailedAttempt(failedAttempttempt);
+        repo.save(tempUser);
     }
 
     public void resetFailedAttempts(String username) {
-        User temp = repo.findById(username).get();
-        temp.setFailedAttempt(0);
-        repo.save(temp);
+        User tempUser = repo.findById(username).orElseThrow();
+        tempUser.setFailedAttempt(0);
+        repo.save(tempUser);
     }
 
     private void lock(String username) {
-        User temp = repo.findById(username).get();
-        temp.setAccountNonLocked(false);
-        temp.setLockTime(new Date());
-        repo.save(temp);
+        User tempUser = repo.findById(username).orElseThrow();
+        tempUser.setAccountNonLocked(false);
+        tempUser.setLockTime(new Date());
+        repo.save(tempUser);
     }
 
     public boolean unlockAfterTimeExpired(String username) {
-        User temp = repo.findById(username).get();
-        if (temp.getLockTime() != null) {
-            long lockTime = temp.getLockTime().getTime();
+        User tempUser = repo.findById(username).orElseThrow();
+        if (tempUser.getLockTime() != null) {
+            long lockTime = tempUser.getLockTime().getTime();
             long currentTime = System.currentTimeMillis();
 
             if (lockTime + lockTimeDuration < currentTime) {
-                temp.setFailedAttempt(0);
-                temp.setAccountNonLocked(true);
-                temp.setLockTime(null);
+                tempUser.setFailedAttempt(0);
+                tempUser.setAccountNonLocked(true);
+                tempUser.setLockTime(null);
 
-                repo.save(temp);
+                repo.save(tempUser);
 
                 return true;
             }

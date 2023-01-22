@@ -1,41 +1,40 @@
-package com.example.manager;
+package com.example.manager.controller;
+
+import com.example.manager.configuration.MyAppConfiguration;
+import com.example.manager.domain.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.Scanner;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
-
-import com.example.manager.domain.User;
-import com.example.manager.controller.UserController;
-import org.springframework.stereotype.Component;
-
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
-@EnableMongoRepositories
 //@Configuration
-public class AsdUserManagerApplication implements CommandLineRunner {
+//@ComponentScan(basePackages = "com.example.manager")
+//@ComponentScan(basePackageClasses = UserController.class)
+//@ComponentScan(basePackageClasses = MyAppConfiguration.class)
+@Service
+//@Controller
+public class MenuController {
 
+    //AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+
+    //final private UserController uc2 = context.getBean(UserController.class);
+
+    //@Qualifier("uc")
     @Autowired
-    MenuController menuController = new MenuController();
+    private UserController uc = new UserController();
 
-    public static void main(String[] args) {
-        SpringApplication.run(AsdUserManagerApplication.class, args);
 
-    }
 
-    @Override
-    public void run(String... args) throws Exception {
-        showMenu();
-    }
+    Scanner scn = new Scanner(System.in);
+    int cnt = 0;
 
-    private void showMenu() {
+    public void showMenu() {
         System.out.println("------------------------------------------");
         System.out.println("++++++ Welcome to the user manager ++++++");
         System.out.println("------------------------------------------");
@@ -82,14 +81,10 @@ public class AsdUserManagerApplication implements CommandLineRunner {
         System.out.println("Please enter password:");
         String password = scn.next();
 
-        String bCryptEncodedPassword = uc.passwordEncoder().encode(password);
 
-        int failedAttempt = 0;
-        boolean accountNonLocked = true;
-        Date lockTime = null;
 
-        User user = new User(firstname, lastname, username, bCryptEncodedPassword, failedAttempt, accountNonLocked, lockTime);
-        uc.register(user);
+        uc.register(firstname, lastname, username, password);
+
         System.out.println("User was successfully created.");
         showMenu();
     }
@@ -103,8 +98,8 @@ public class AsdUserManagerApplication implements CommandLineRunner {
         String username = scn.next();
         System.out.println("Please enter password:");
         String password = scn.next();
-        
-        
+
+
         while (!uc.login(username, password)) {
             System.out.println("Username or password incorrect. Try again!\n");
             System.out.println("Please enter username:");
@@ -130,7 +125,7 @@ public class AsdUserManagerApplication implements CommandLineRunner {
                 deleteAccountMenu(username);
                 break;
             case 3:
-                uc.logout();
+                uc.logout(username, password);
                 showMenu();
         }
 
@@ -180,5 +175,4 @@ public class AsdUserManagerApplication implements CommandLineRunner {
         System.out.println("--- Account log out successful ! \n --- Your account has been deleted successfully! --- \n");
         showMenu();
     }
-
 }
