@@ -42,8 +42,13 @@ import static org.mockito.ArgumentMatchers.anyString;
 
 class UserControllerTest {
 
+    @Bean
+    public PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
+
     @InjectMocks
     UserController usercontrolla;
+    public PasswordEncoder passwordEncoderMock = passwordEncoder();
+    //private PasswordEncoder testPasswordEncoder = new BCryptPasswordEncoder();
 
     @Mock
     private UserRepository repo;
@@ -138,13 +143,37 @@ class UserControllerTest {
     @Test
     void changePassword() {
         User dummyUser = new User("benis","kebab","box", "asd123", 0, false, null);
+        String dummyPasswordEncoded = "asdasdasdasd";
         Mockito.when(repo.save(Mockito.any(User.class))).thenReturn(dummyUser);
+        //Mockito.when(repo.findById(anyString())).thenReturn(Optional.of(dummyUser));
         Mockito.when(repo.findById(anyString())).thenReturn(Optional.of(dummyUser));
-        Mockito.when(testPasswordEncoder.encode(anyString())).thenReturn("asd1234");
-
+        //Mockito.when(testPasswordEncoder.encode(anyString())).thenReturn("asd1234");
+        //tempUser.setPassword(passwordEncoder.encode(newPassword));
+        Mockito.when(testPasswordEncoder.encode(anyString())).thenReturn(dummyPasswordEncoded);
+        ///Mockito.when(Mockito.any(User.class).setPassword(anyString()));
+        ///Mockito.when(testPasswordEncoder.encode(anyString())).thenReturn(dummyPasswordEncoded);
+        //tempUser.setPassword(passwordEncoder.encode(newPassword));
+        //Mockito.when(dummyUser.setPassword(testPasswordEncoder.encode(dummyUser.getPassword()))).thenReturn(dummyPasswordEncoded);
+        //Mockito.when(testPasswordEncoder.matches("asd123", dummyPassword)).thenReturn(Boolean.valueOf("asd123"));
         User testUser = usercontrolla.changePassword("box", "asd12345");
 
-        assertEquals("asd1234", testUser.getPassword());
+        //assertEquals("asd1234", testUser.getPassword());
+        assertEquals(testUser.getPassword(), testPasswordEncoder.matches("asd12345", testUser.getPassword()));
 
+    }
+
+    @Test
+    void changePasswordTest() {
+
+
+        //User tempUser = repo.findById(username).orElseThrow();
+
+        User tempUser = new User("testFirstNameFirstInit","testLastNameFirstInit","usernameFirstInit", "1337FirstInit", 1, true, null);
+        String newPassword = passwordEncoderMock.encode(tempUser.getPassword());
+        tempUser.setPassword(newPassword);
+        boolean machPassword = passwordEncoderMock.matches("1337FirstInit", tempUser.getPassword());
+        assert machPassword : "Password does NOT match";
+        //repo.save(tempUser);
+        //return repo.save(tempUser);
     }
 }
