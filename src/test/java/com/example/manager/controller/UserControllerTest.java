@@ -17,6 +17,8 @@ import org.springframework.boot.test.autoconfigure.data.jdbc.DataJdbcTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.*;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.util.Assert;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -32,6 +34,8 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 
@@ -44,9 +48,13 @@ class UserControllerTest {
     @Mock
     private UserRepository repo;
 
+    @Mock
+    private PasswordEncoder testPasswordEncoder = new BCryptPasswordEncoder();
+
    @BeforeEach
    void setUp() throws Exception {
-       MockitoAnnotations.initMocks(this);
+       MockitoAnnotations.openMocks(this);
+       //MockitoAnnotations.initMocks(this);
    }
 
     @Test
@@ -59,7 +67,7 @@ class UserControllerTest {
 
 
     @Test
-    void test_register() {
+    void register_isSuccessful_returnUser() {
         User dummyUser = new User("benis","kebab","box", "asd123", 0, false, null);
 
         Mockito.when(repo.save(Mockito.any(User.class))).thenReturn(dummyUser);
@@ -78,11 +86,65 @@ class UserControllerTest {
     }
 
     @Test
-    void checkIfUsernameTaken() {
+    void checkIfUsernameTaken_isTaken_returnTrue() {
         Mockito.when(repo.existsById(anyString())).thenReturn(true);
 
         boolean response = usercontrolla.checkIfUsernameTaken("box");
 
         assertEquals(response, true);
+    }
+
+    @Test
+    void checkIfUsernameTaken_isNotTaken_returnFalse() {
+        Mockito.when(repo.existsById(anyString())).thenReturn(false);
+
+        boolean response = usercontrolla.checkIfUsernameTaken("box");
+
+        assertEquals(response, false);
+    }
+
+
+    @Test //--- not working ---
+    void login_isSuccessful_returnTrue() {
+        User dummyUser = new User("benis","kebab","box", "asd123", 0, true, null);
+        Mockito.when(repo.findById(anyString())).thenReturn(Optional.of(dummyUser));
+        Mockito.when(testPasswordEncoder.matches(anyString(), anyString())).thenReturn(true);
+
+        boolean response = usercontrolla.login("box", "asd123");
+
+        assertEquals(true, response);
+    }
+
+
+    @Test
+    void loadTempUser_isSuccessful_returnUser() {
+        User dummyUser = new User("benis","kebab","box", "asd123", 0, true, null);
+        Mockito.when(repo.findById(anyString())).thenReturn(Optional.of(dummyUser));
+
+        User testUser = usercontrolla.loadTempUser("box");
+
+        assertEquals(dummyUser.getUsername(), testUser.getUsername());
+    }
+
+    @Test
+    void loadTempUser_isNotSuccessful_returnNull() {
+        Mockito.when(repo.findById(anyString())).thenReturn(null);
+
+        User testUser = usercontrolla.loadTempUser("box");
+
+        assertEquals(null, testUser);
+    }
+
+    @Test
+    void changePassword() {
+        User dummyUser = new User("benis","kebab","box", "asd123", 0, false, null);
+        Mockito.when(repo.save(Mockito.any(User.class))).thenReturn(dummyUser);
+        Mockito.when(repo.findById(anyString())).thenReturn(Optional.of(dummyUser));
+        Mockito.when(testPasswordEncoder.encode(anyString())).thenReturn("asd1234");
+
+        User testUser = usercontrolla.changePassword("box", "asd12345");
+
+        assertEquals("asd1234", testUser.getPassword());
+
     }
 }
