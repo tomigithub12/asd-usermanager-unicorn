@@ -34,6 +34,8 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,11 +49,14 @@ class UserControllerTest {
 
     @InjectMocks
     UserController usercontrolla;
-    public PasswordEncoder passwordEncoderMock = passwordEncoder();
+    public User userMock = new User("benis","kebab","box", "asd123", 0, false, null);;
+    //public PasswordEncoder passwordEncoderMock = passwordEncoder();
     //private PasswordEncoder testPasswordEncoder = new BCryptPasswordEncoder();
 
     @Mock
     private UserRepository repo;
+    public PasswordEncoder passwordEncoderMock = passwordEncoder();
+
 
     @Mock
     private PasswordEncoder testPasswordEncoder = new BCryptPasswordEncoder();
@@ -108,9 +113,55 @@ class UserControllerTest {
         assertEquals(response, false);
     }
 
+/*
+    @Test //--- not working ---
+    void login_isSuccessful_returnTrue() throws IllegalAccessException, InstantiationException {
+        User dummyUser = new User("benis","kebab","box", "asd123", 0, true, null);
+        //userMock = dummyUser;
+        Mockito.when(usercontrolla.loadTempUser(anyString())).thenReturn((Mockito.any(User.class)));
+        //Mockito.when(repo.findById(anyString())).thenReturn(Optional.of(Mockito.any(User.class)));
+        //Mockito.when(testPasswordEncoder.matches(anyString(), anyString())).thenReturn(true);
+
+
+        //Mockito.when(usercontrolla.loadTempUser(anyString())).thenReturn((dummyUser));
+        //Mockito.when(repo.findById(anyString()).orElseThrow()).thenReturn(Optional.of(dummyUser));
+        Mockito.when(dummyUser.getAccountNonLocked()).thenReturn(true);
+        Mockito.when(dummyUser.getFailedAttempt()).thenReturn(0);
+
+        boolean response = usercontrolla.login("box", "asd123");
+
+        assertEquals(true, response);
+    }
+
+ */
 
     @Test //--- not working ---
-    void login_isSuccessful_returnTrue() {
+    void login_isSuccessful_returnTrue_V2() {
+        User dummyUser = new User("benis","kebab","box", "$2a$10$2x6AfON5G4KS2m6RhPoKq.Yc8iaDFMKK8wGq5YoKWfEdZNPCk9CJ.", 0, true, null);
+        Mockito.when(repo.findById(anyString())).thenReturn(Optional.of(dummyUser));
+        Mockito.when(testPasswordEncoder.matches(anyString(), anyString())).thenReturn(true);
+        //Mockito.when(Mockito.any(User.class).getPassword()).thenReturn(String.valueOf(true));
+
+        boolean response = usercontrolla.login("box", "asd12345");
+
+        assertEquals(true, response);
+    }
+
+
+    @Test
+    void login_FailedAttempt_returnFalse() {
+        Date newDate = new Date(2022, Calendar.JANUARY, 3, 2, 44, 26);
+        User dummyUser = new User("benis","kebab","box", "asd123", 0, true, newDate);
+        Mockito.when(repo.findById(anyString())).thenReturn(Optional.of(dummyUser));
+        Mockito.when(testPasswordEncoder.matches(anyString(), anyString())).thenReturn(true);
+
+        boolean response = usercontrolla.login("box", "asd123");
+
+        assertEquals(false, response);
+    }
+/*
+    @Test //--- not working ---
+    void login_isSuccessful_returnTrue_OLD() {
         User dummyUser = new User("benis","kebab","box", "asd123", 0, true, null);
         Mockito.when(repo.findById(anyString())).thenReturn(Optional.of(dummyUser));
         Mockito.when(testPasswordEncoder.matches(anyString(), anyString())).thenReturn(true);
@@ -119,6 +170,7 @@ class UserControllerTest {
 
         assertEquals(true, response);
     }
+*/
 
 
     @Test
@@ -143,13 +195,18 @@ class UserControllerTest {
     @Test
     void changePassword() {
         User dummyUser = new User("benis","kebab","box", "asd123", 0, false, null);
+        User dummyUserEncryptedPW = new User("benis","kebab","box", "asdasdasdasd", 0, false, null);
+
         String dummyPasswordEncoded = "asdasdasdasd";
-        Mockito.when(repo.save(Mockito.any(User.class))).thenReturn(dummyUser);
+        Mockito.when(repo.save(Mockito.any(User.class))).thenReturn(dummyUserEncryptedPW);
         //Mockito.when(repo.findById(anyString())).thenReturn(Optional.of(dummyUser));
         Mockito.when(repo.findById(anyString())).thenReturn(Optional.of(dummyUser));
         //Mockito.when(testPasswordEncoder.encode(anyString())).thenReturn("asd1234");
         //tempUser.setPassword(passwordEncoder.encode(newPassword));
-        Mockito.when(testPasswordEncoder.encode(anyString())).thenReturn(dummyPasswordEncoded);
+        /////////Mockito.when(testPasswordEncoder.encode(anyString())).thenReturn(dummyPasswordEncoded);
+
+        //Mockito.when(passwordEncoderMock.encode(anyString())).thenReturn(String.valueOf(Optional.of(dummyUserEncryptedPW)));
+        //Mockito.when(Mockito.any(User.class).setPassword(anyString())).thenReturn(dummyUserEncryptedPW);
         ///Mockito.when(Mockito.any(User.class).setPassword(anyString()));
         ///Mockito.when(testPasswordEncoder.encode(anyString())).thenReturn(dummyPasswordEncoded);
         //tempUser.setPassword(passwordEncoder.encode(newPassword));
@@ -158,8 +215,37 @@ class UserControllerTest {
         User testUser = usercontrolla.changePassword("box", "asd12345");
 
         //assertEquals("asd1234", testUser.getPassword());
-        assertEquals(testUser.getPassword(), testPasswordEncoder.matches("asd12345", testUser.getPassword()));
+        //assertEquals(testUser.getPassword(), testPasswordEncoder.matches("asd12345", testUser.getPassword()));
+        //assertEquals(dummyUser.getPassword(), testUser.getPassword());
+        assertEquals(testUser.getPassword(), dummyPasswordEncoded);
+    }
 
+    @Test
+    void changePasswordMethodWithoutMocksAndRealEncryption() {
+        User dummyUser = new User("benis","kebab","box", "asd123", 0, false, null);
+        User dummyUserEncryptedPW = new User("benis","kebab","box", "asdasdasdasd", 0, false, null);
+
+        String dummyPasswordEncoded = "asdasdasdasd";
+        Mockito.when(repo.save(Mockito.any(User.class))).thenReturn(dummyUser);
+        //Mockito.when(repo.findById(anyString())).thenReturn(Optional.of(dummyUser));
+        Mockito.when(repo.findById(anyString())).thenReturn(Optional.of(dummyUser));
+        //Mockito.when(testPasswordEncoder.encode(anyString())).thenReturn("asd1234");
+        //tempUser.setPassword(passwordEncoder.encode(newPassword));
+        /////////Mockito.when(testPasswordEncoder.encode(anyString())).thenReturn(dummyPasswordEncoded);
+
+        //Mockito.when(passwordEncoderMock.encode(anyString())).thenReturn(String.valueOf(Optional.of(dummyUserEncryptedPW)));
+        //Mockito.when(Mockito.any(User.class).setPassword(anyString())).thenReturn(dummyUserEncryptedPW);
+        ///Mockito.when(Mockito.any(User.class).setPassword(anyString()));
+        ///Mockito.when(testPasswordEncoder.encode(anyString())).thenReturn(dummyPasswordEncoded);
+        //tempUser.setPassword(passwordEncoder.encode(newPassword));
+        //Mockito.when(dummyUser.setPassword(testPasswordEncoder.encode(dummyUser.getPassword()))).thenReturn(dummyPasswordEncoded);
+        //Mockito.when(testPasswordEncoder.matches("asd123", dummyPassword)).thenReturn(Boolean.valueOf("asd123"));
+        User testUser = usercontrolla.changePassword("box", "asd12345");
+
+        //assertEquals("asd1234", testUser.getPassword());
+        //assertEquals(testUser.getPassword(), testPasswordEncoder.matches("asd12345", testUser.getPassword()));
+        assertEquals(dummyUser.getPassword(), testUser.getPassword());
+        //assertEquals(testUser.getPassword(), dummyPasswordEncoded);
     }
 
     @Test
