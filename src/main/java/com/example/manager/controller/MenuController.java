@@ -1,31 +1,19 @@
 package com.example.manager.controller;
 
-import com.example.manager.configuration.MyAppConfiguration;
-import com.example.manager.domain.User;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Controller;
+
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
 import java.util.Scanner;
 
-//@Configuration
-//@ComponentScan(basePackages = "com.example.manager")
-//@ComponentScan(basePackageClasses = UserController.class)
-//@ComponentScan(basePackageClasses = MyAppConfiguration.class)
+
 @Service
-//@Controller
 public class MenuController {
 
-    //AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-    //final private UserController uc2 = context.getBean(UserController.class);
 
-    //@Qualifier("uc")
+    protected ExitMenu exitMenu = new ExitMenu();
+
     @Autowired
     private UserController uc = new UserController();
 
@@ -52,7 +40,7 @@ public class MenuController {
                     break;
                 case 3:
                     System.out.println("Closed UserManager!");
-                    System.exit(0);
+                    exitMenu.executeSystemExit();
                 default:
                     System.out.println("Invalid Input! Restarting....");
                     showMenu();
@@ -63,7 +51,7 @@ public class MenuController {
         }
     }
 
-    private void registerMenu() {
+    public void registerMenu() {
         System.out.println("--- Register Menu ---");
 
         System.out.println("Please enter firstname:");
@@ -89,7 +77,7 @@ public class MenuController {
         showMenu();
     }
 
-    private void loginMenu() {
+    public void loginMenu() {
 
         System.out.println("--- Login Menu ---");
 
@@ -111,7 +99,7 @@ public class MenuController {
         loggedInMenu(username, password);
     }
 
-    private void loggedInMenu(String username, String password) {
+    public void loggedInMenu(String username, String password) {
 
         System.out.println("\n--- Logged in as " + username + "---\n");
         System.out.println("Choose Options: \n (1)Change password \n (2)Delete Account \n (3)Logout");
@@ -131,7 +119,7 @@ public class MenuController {
 
     }
 
-    private void changePasswordMenu(String username, String password) {
+    public void changePasswordMenu(String username, String password) {
         boolean passwordResetSucess = false;
         String newPassword = null;
         String confirmNewPassword = null;
@@ -161,7 +149,7 @@ public class MenuController {
         }
     }
 
-    private void deleteAccountMenu(String username) {
+    public void deleteAccountMenu(String username) {
         System.out.println("\n--- Account Deletion ---");
 
         System.out.println("Please enter your password for account deletion:");

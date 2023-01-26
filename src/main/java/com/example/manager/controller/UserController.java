@@ -3,36 +3,16 @@ package com.example.manager.controller;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
-
-import com.example.manager.configuration.MyAppConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Service;
-
 import com.example.manager.repository.UserRepository;
-
 import com.example.manager.domain.User;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.example.manager.repository.UserRepository;
 
 @Service
-//@Controller
-//@Configuration
-//@ComponentScan(basePackages = "com.example.manager")
-//@ComponentScan(basePackageClasses = MyAppConfiguration.class)
-//@EnableMongoRepositories
 public class UserController {
 
     public static final int maxFailedAttempts = 3;
@@ -43,32 +23,13 @@ public class UserController {
     @Bean
     public PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
 
-    //AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-
     @Autowired
     private UserRepository repo;
 
-
-
-
-    //private UserRepository userRepository() { this.userRepository(); };
-
-
-
-
-    //@Autowired
-    //private PasswordEncoder passwordEncoder;
-
     final private PasswordEncoder passwordEncoder = passwordEncoder();
-
-    //AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-
-    //final private PasswordEncoder passwordEncoder = context.getBean(PasswordEncoder.class);
 
     public UserController() {
         super();
-
-        //userController = userController;
     }
 
 
@@ -81,7 +42,6 @@ public class UserController {
 
         User user = new User(firstname, lastname, username, bCryptEncodedPassword, failedAttempt, accountNonLocked, lockTime);
         return repo.save(user);
-        //return userRepository().save(user);
     }
 
     public boolean checkIfUsernameTaken(String username) {
@@ -90,12 +50,6 @@ public class UserController {
 
 
     public boolean login(String username, String password) {
-        //User tempUser = null;
-        //try {
-        //    tempUser = repo.findById(username).get();
-        //} catch (Exception e) {
-
-        //}
 
         User tempUser = loadTempUser(username);
 
@@ -105,13 +59,13 @@ public class UserController {
                 return true;
             } else {
                 unlockAfterTimeExpired(username);
-                //tempUser = repo.findById(username).get();
+                tempUser = repo.findById(username).get();
                 if (tempUser.getAccountNonLocked() && tempUser.getFailedAttempt() < maxFailedAttempts) {
                     increaseFailedAttempts(username);
-                    //tempUser = repo.findById(username).get();
+                    tempUser = repo.findById(username).get();
                     System.out.println("Failed attempt " + tempUser.getFailedAttempt() + "/4.");
                 } else {
-                    //tempUser = repo.findById(username).get();
+                    tempUser = repo.findById(username).get();
                     if (tempUser.getFailedAttempt() == maxFailedAttempts) {
                         lock(username);
                         DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -143,7 +97,6 @@ public class UserController {
     public User changePassword(String username, String newPassword) {
         User tempUser = repo.findById(username).orElseThrow();
         tempUser.setPassword(passwordEncoder.encode(newPassword));
-        //repo.save(tempUser);
         return repo.save(tempUser);
     }
 
